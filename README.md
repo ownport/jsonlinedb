@@ -1,0 +1,4 @@
+jsonlinedb
+==========
+
+Simple JSONlines storage
