@@ -3,17 +3,18 @@ import sys
 import json
 import linecache
 
+from exceptions import JsonlineDBException
 
 class JsonStorage(object):
 
-    db_index = dict()
-    
     def __init__(self, jsondb_path):
         ''' __init__
         '''
         if not os.path.exists(jsondb_path):
             raise RuntimeError('File does not exist: %s' % jsondb_path)
         self.jsondb_path = jsondb_path
+        self.db_index = dict()    
+        
     
     def make_unique_index(self, fields=[]):
         ''' make uniqie index
@@ -21,6 +22,7 @@ class JsonStorage(object):
         if not fields:
             raise RuntimeError('Index fields are not defined')
         
+        linecache.checkcache()
         with open(self.jsondb_path) as db:
             for pos_id, data in enumerate(db):
                 
@@ -41,25 +43,31 @@ class JsonStorage(object):
                 raise RuntimeError('Index %s not found' % k)
             pos_id = self.db_index[k].get(v, None)
             if pos_id:
-                result.append(json.loads(linecache.getline(self.jsondb_path, pos_id)))
+                data = linecache.getline(self.jsondb_path, pos_id)
+                result.append(json.loads(data))
         return result
+
 
     def put(self, jsondata):
         ''' append data into jsondb
         '''
         with open(self.jsondb_path, 'a') as db:
-            db.write("%s\n" % json.dumps(jsondata))
+            try:
+                db.write("%s\n" % json.dumps(jsondata))
+            except TypeError, err:
+                raise JsonlineDBException('Error! "%s" cannot be JSON serialized' % jsondata)
+                                
 
     def items(self):
         with open(self.jsondb_path) as db:
             for i,data in enumerate(db):
                 yield json.loads(data)
                     
+                    
     def stats(self):
         ''' returns stats
         '''
         return {
             'records': [(field, len(self.db_index[field])) for field in self.db_index],
-            'indexes_size': [(field, sys.getsizeof(self.db_index[field])) for field in self.db_index],
         }
          
