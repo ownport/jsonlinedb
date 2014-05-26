@@ -22,6 +22,10 @@ class JsonStorage(object):
         if not fields:
             raise RuntimeError('Index fields are not defined')
         
+        for field in fields:
+            if field in self.db_index:
+                self.db_index.pop(field, None)
+        
         linecache.checkcache()
         with open(self.jsondb_path) as db:
             for pos_id, data in enumerate(db):
