@@ -1,0 +1,4 @@
+
+class JsonlineDBException(Exception):
+    pass
+    
